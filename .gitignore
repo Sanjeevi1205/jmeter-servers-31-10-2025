@@ -1,26 +1,3 @@
-# Ignore JMeter results and reports
-report/
-results.jtl
-jmeter.log
-
-# Ignore Windows system files
-Thumbs.db
-Desktop.ini
-
-# Ignore temporary files
-*.tmp
-*.bak
-
-# Ignore log files
-*.log
-
-# Ignore IDE/editor files
-.vscode/
-.idea/
-*.iml
-
-# Ignore OS junk
-.DS_Store
-
-# Ignore Jenkins workspace files (if any)
-workspace/
+# Ignore local JMeter installation
+apache-jmeter-5.6.3/
+apache-jmeter*/   # ignore any future versions too
