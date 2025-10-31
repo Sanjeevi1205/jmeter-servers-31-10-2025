@@ -13,7 +13,7 @@ pipeline {
         stage('Run JMeter Tests') {
             steps {
                 echo '🚀 Running JMeter Tests...'
-                bat 'jmeter -n -t tests/LoginTest.jmx -l report\\result.jtl -e -o report\\html'
+                bat 'jmeter -n -t learnwebservices_test.jmx -l report\\result.jtl -e -o report\\html'
             }
         }
 
