@@ -14,12 +14,25 @@ pipeline {
             }
         }
 
+        stage('Cleanup Old Reports') {
+            steps {
+                echo 'Cleaning up old reports and result files...'
+                bat '''
+                    if exist report (
+                        echo Deleting old report directory...
+                        rmdir /s /q report
+                    )
+                    echo Creating new report folder...
+                    mkdir report
+                '''
+            }
+        }
+
         stage('Run JMeter Test') {
             steps {
                 echo 'Running JMeter performance test in non-GUI mode...'
                 bat '''
-                    if not exist report mkdir report
-                    jmeter -n -t learnwebservices_test.jmx -l report\\result.jtl -e -o report\\html
+                    "%JMETER_HOME%\\bin\\jmeter.bat" -n -t learnwebservices_test.jmx -l report\\result.jtl -e -o report\\html
                 '''
             }
         }
