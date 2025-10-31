@@ -1,19 +1,29 @@
 pipeline {
     agent any
 
+    environment {
+        JMETER_HOME = '/var/lib/jenkins/apache-jmeter-5.6.3'   // Adjust path to where JMeter is installed
+        PATH = "${JMETER_HOME}/bin:${env.PATH}"
+    }
+
     stages {
         stage('Cleanup old reports') {
             steps {
                 echo '🧹 Cleaning up old JMeter results...'
-                bat 'if exist report\\result.jtl del /f /q report\\result.jtl'
-                bat 'if exist report\\html rmdir /s /q report\\html'
+                sh '''
+                    rm -rf report || true
+                    mkdir -p report/html
+                '''
             }
         }
 
         stage('Run JMeter Tests') {
             steps {
-                echo '🚀 Running JMeter Tests...'
-                bat 'jmeter -n -t learnwebservices_test.jmx -l report\\result.jtl -e -o report\\html'
+                echo '🚀 Running JMeter performance test...'
+                sh '''
+                    ${JMETER_HOME}/bin/jmeter -n -t learnwebservices_test.jmx \
+                    -l report/result.jtl -e -o report/html
+                '''
             }
         }
 
@@ -23,7 +33,7 @@ pipeline {
                 publishHTML(target: [
                     reportDir: 'report/html',
                     reportFiles: 'index.html',
-                    reportName: 'JMeter Test Report',
+                    reportName: 'JMeter Performance Report',
                     keepAll: true,
                     alwaysLinkToLastBuild: true,
                     allowMissing: false
@@ -34,7 +44,7 @@ pipeline {
 
     post {
         always {
-            echo '✅ Pipeline finished (cleanup complete).'
+            echo '✅ Pipeline completed successfully.'
         }
     }
 }
