@@ -1,0 +1,50 @@
+pipeline {
+    agent any
+
+    environment {
+        JMETER_HOME = "C:\\Users\\sanjeevi.p\\Pictures\\playwrightLog\\apache-jmeter-5.6.3"
+        REPORT_DIR = "report"
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                echo 'Fetching code from GitHub...'
+                checkout scm
+            }
+        }
+
+        stage('Run JMeter Test') {
+            steps {
+                echo 'Executing JMeter performance test...'
+                bat """
+                    del /Q results.jtl || exit 0
+                    del /Q report || exit 0
+                    mkdir report
+                    "%JMETER_HOME%\\bin\\jmeter.bat" -n -t learnwebservices_test.jmx -l results.jtl -e -o report\\html
+                """
+            }
+        }
+
+        stage('Publish HTML Report') {
+            steps {
+                echo 'Publishing JMeter HTML report...'
+                publishHTML(target: [
+                    allowMissing: false,
+                    alwaysLinkToLastBuild: true,
+                    keepAll: true,
+                    reportDir: 'report/html',
+                    reportFiles: 'index.html',
+                    reportName: 'JMeter Performance Report'
+                ])
+            }
+        }
+    }
+
+    post {
+        always {
+            archiveArtifacts artifacts: 'results.jtl', fingerprint: true
+            echo 'Test execution completed.'
+        }
+    }
+}
