@@ -1,42 +1,55 @@
 pipeline {
     agent any
 
+    parameters {
+        string(name: 'THREADS', defaultValue: '10', description: 'Number of virtual users')
+        string(name: 'RAMPUP', defaultValue: '5', description: 'Ramp-up time in seconds')
+        string(name: 'DURATION', defaultValue: '60', description: 'Duration of the test in seconds')
+    }
+
     environment {
-        JMETER_HOME = '/var/lib/jenkins/apache-jmeter-5.6.3'   // Adjust path to where JMeter is installed
-        PATH = "${JMETER_HOME}/bin:${env.PATH}"
+        RESULTS_DIR = 'report'
     }
 
     stages {
         stage('Cleanup old reports') {
             steps {
-                echo '🧹 Cleaning up old JMeter results...'
+                echo "🧹 Cleaning up old JMeter results..."
                 sh '''
-                    rm -rf report || true
-                    mkdir -p report/html
+                    rm -rf ${RESULTS_DIR}
+                    mkdir -p ${RESULTS_DIR}/html
                 '''
             }
         }
 
         stage('Run JMeter Tests') {
             steps {
-                echo '🚀 Running JMeter performance test...'
+                echo "🚀 Running JMeter performance test with parameters:"
+                echo "THREADS=${params.THREADS}, RAMPUP=${params.RAMPUP}, DURATION=${params.DURATION}"
+
+                // Run test with globally available JMeter
                 sh '''
-                    ${JMETER_HOME}/bin/jmeter -n -t learnwebservices_test.jmx \
-                    -l report/result.jtl -e -o report/html
+                    jmeter -n \
+                        -t learnwebservices_test.jmx \
+                        -l ${RESULTS_DIR}/result.jtl \
+                        -e -o ${RESULTS_DIR}/html \
+                        -Jthreads=${THREADS} \
+                        -Jrampup=${RAMPUP} \
+                        -Jduration=${DURATION}
                 '''
             }
         }
 
         stage('Publish JMeter Report') {
             steps {
-                echo '📊 Publishing JMeter HTML report...'
+                echo "📊 Publishing JMeter HTML report..."
                 publishHTML(target: [
-                    reportDir: 'report/html',
-                    reportFiles: 'index.html',
-                    reportName: 'JMeter Performance Report',
-                    keepAll: true,
+                    allowMissing: false,
                     alwaysLinkToLastBuild: true,
-                    allowMissing: false
+                    keepAll: true,
+                    reportDir: "${RESULTS_DIR}/html",
+                    reportFiles: 'index.html',
+                    reportName: 'JMeter Test Report'
                 ])
             }
         }
@@ -44,7 +57,10 @@ pipeline {
 
     post {
         always {
-            echo '✅ Pipeline completed successfully.'
+            echo "✅ Pipeline completed successfully."
+        }
+        failure {
+            echo "❌ Pipeline failed. Please check logs and JMeter execution output."
         }
     }
 }
